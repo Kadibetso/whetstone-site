@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bookings · CROWN & CUT BARBERS.</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .admin-table{ width:100%; border-collapse:collapse; margin-top:24px; }
+  .admin-table th{ text-align:left; font-size:0.8rem; color:var(--brass-light); text-transform:uppercase; letter-spacing:0.03em; padding:10px 12px; border-bottom:1px solid rgba(232,227,211,0.2); }
+  .admin-table td{ padding:12px; border-bottom:1px solid rgba(232,227,211,0.08); font-size:0.92rem; color:var(--bone); vertical-align:top; }
+  .admin-table tr:hover td{ background:rgba(175,138,60,0.06); }
+  .empty-state, .setup-note{ background:var(--pine); border:1px solid rgba(232,227,211,0.1); border-radius:6px; padding:24px; color:var(--bone-dim); }
+  .setup-note code{ background:var(--ink); color:var(--brass-light); padding:2px 6px; border-radius:3px; }
+  .badge{ display:inline-block; font-size:0.75rem; padding:3px 9px; border-radius:20px; border:1px solid rgba(232,227,211,0.25); color:var(--bone-dim); }
+</style>
+</head>
+<body>
+<header>
+  <nav class="wrap">
+    <a class="brand" href="index.html" aria-label="Whetstone Barber Co., go home">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="20" cy="20" r="19" style="stroke:var(--brass)" stroke-width="1.4"/>
+        <path d="M11 26 L26 11" style="stroke:var(--bone)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span class="display">Whetstone</span>
+    </a>
+    <span class="badge">Staff only — bookings</span>
+  </nav>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Upcoming bookings</h2>
+      <p>Pulled live from the shop's database. Refresh this page any time to see new requests.</p>
+    </div>
+
+    <div id="setupNote" class="setup-note" style="display:none;">
+      <p style="margin:0 0 8px;"><strong>Database not connected yet.</strong> Fill in <code>js/supabase-config.js</code> with your Supabase project URL and anon key to see real bookings here.</p>
+    </div>
+    <div id="emptyState" class="empty-state" style="display:none;">No bookings yet — they'll show up here as customers book online.</div>
+    <div id="tableWrap" style="display:none; overflow-x:auto;">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Date</th><th>Time</th><th>Customer</th><th>Contact</th><th>Service</th><th>Barber</th></tr>
+        </thead>
+        <tbody id="bookingsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap"><p style="text-align:center; margin:0;">© 2026 CROWN & CUT BARBERS — internal staff page, not linked from the public site.</p></div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script>
+async function loadBookings(){
+  if(typeof supabaseClient === 'undefined' || !supabaseClient){
+    document.getElementById('setupNote').style.display = 'block';
+    return;
+  }
+  var { data, error } = await supabaseClient
+    .from('bookings')
+    .select('*')
+    .order('appointment_date', { ascending: true })
+    .order('appointment_time', { ascending: true });
+
+  if(error){
+    document.getElementById('setupNote').style.display = 'block';
+    document.getElementById('setupNote').innerHTML = '<p style="margin:0;">Could not load bookings: ' + error.message + '</p>';
+    return;
+  }
+  if(!data || data.length === 0){
+    document.getElementById('emptyState').style.display = 'block';
+    return;
+  }
+  var rows = data.map(function(b){
+    return '<tr>' +
+      '<td>' + b.appointment_date + '</td>' +
+      '<td>' + b.appointment_time + '</td>' +
+      '<td>' + b.name + '</td>' +
+      '<td>' + b.phone + '<br><span style="color:var(--bone-dim); font-size:0.85rem;">' + b.email + '</span></td>' +
+      '<td>' + b.service + '</td>' +
+      '<td>' + b.barber + '</td>' +
+    '</tr>';
+  }).join('');
+  document.getElementById('bookingsBody').innerHTML = rows;
+  document.getElementById('tableWrap').style.display = 'block';
+}
+loadBookings();
+</script>
+</body>
+</html>
